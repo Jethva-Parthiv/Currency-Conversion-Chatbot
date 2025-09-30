@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>💱 CurioBot - Currency Chat</title>
+  <style>
+    body { 
+      font-family: "Poppins", "Segoe UI", sans-serif; 
+      background: #1e1f23; 
+      margin:0; 
+      display:flex; 
+      justify-content:center; 
+      align-items:center; 
+      height:100vh;
+      color:#fff;
+    }
+    #chat-container { 
+      width: 480px; 
+      height: 550px; /* decreased height */
+      background: #2b2d31; 
+      border-radius: 14px; 
+      display:flex; 
+      flex-direction:column; 
+      overflow:hidden; 
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      /* center vertically */
+      position: relative;
+      top: 0;
+      transform: translateY(0%);
+    }
+    #header {
+      background:#3c3f44;
+      padding:14px;
+      text-align:center;
+      font-weight:bold;
+      font-size:19px;
+      border-bottom:1px solid #444;
+    }
+    #chat-box { 
+      flex:1; 
+      padding:15px; 
+      overflow-y:auto; 
+      scrollbar-width:thin;
+      scrollbar-color:#555 #2b2d31;
+      display:flex;
+      flex-direction:column;
+    }
+    #chat-box::-webkit-scrollbar { width:6px; }
+    #chat-box::-webkit-scrollbar-thumb { background:#555; border-radius:3px; }
+    #chat-box::-webkit-scrollbar-track { background:#2b2d31; }
+    .msg { 
+      margin:8px 0; 
+      padding:10px 14px 18px; 
+      border-radius:16px; 
+      max-width:75%; 
+      line-height:1.5; 
+      word-wrap:break-word; 
+      animation: fadeIn 0.3s ease;
+      font-size:15px;
+      position: relative;
+    }
+    .msg .timestamp {
+      font-size: 10px;
+      color: #aaa;
+      position: absolute;
+      bottom: 4px;
+      right: 8px;
+    }
+    .user { 
+      background:#0078ff; 
+      color:white; 
+      align-self:flex-end; 
+      border-bottom-right-radius:4px; 
+      text-align:right;
+    }
+    .bot { 
+      background:#3c3f44; 
+      color:#f1f1f1; 
+      align-self:flex-start; 
+      border-bottom-left-radius:4px;
+      text-align:left;
+    }
+    .user::before { content: "👤 "; font-size:14px; }
+    .bot::before { content: "🤖 "; font-size:14px; }
+
+    #input-area { 
+      display:flex; 
+      border-top:1px solid #444; 
+      background:#2b2d31;
+      padding:10px;
+    }
+    #input { 
+      flex:1; 
+      border:none; 
+      padding:14px; 
+      border-radius:8px; 
+      outline:none; 
+      font-size:16px;
+      background:#3c3f44; 
+      color:white; 
+    }
+    #input::placeholder { color:#aaa; }
+    button { 
+      border:none; 
+      margin-left:8px;
+      padding:14px 18px; 
+      border-radius:8px; 
+      background:#0078ff; 
+      color:white; 
+      font-size:16px;
+      cursor:pointer; 
+      transition:0.2s;
+    }
+    button:hover { background:#0a84ff; }
+
+    @keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
+    /* Skeleton loader */
+    .skeleton { 
+      background:linear-gradient(90deg,#3c3f44,#4a4c51,#3c3f44); 
+      background-size:200% 100%; 
+      animation:loading 1.5s infinite; 
+      border-radius:12px; 
+      height:20px; 
+      width:150px; 
+      margin:5px 0; 
+    }
+    @keyframes loading { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <div id="header">💱 CurioBot</div>
+    <div id="chat-box"></div>
+    <div id="input-area">
+      <input id="input" placeholder="Type a message...">
+      <button onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const input = document.getElementById("input");
+
+    function getTime() {
+      let now = new Date();
+      return now.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+    }
+
+    function appendMessage(text, sender) {
+      let msg = document.createElement("div");
+      msg.className = "msg " + sender;
+      msg.innerHTML = text + `<div class="timestamp">${getTime()}</div>`;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showSkeleton() {
+      let skeleton = document.createElement("div");
+      skeleton.className = "msg bot skeleton";
+      chatBox.appendChild(skeleton);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return skeleton;
+    }
+    
+   async function sendMessage() {
+  let text = input.value.trim();
+  if (!text) return;
+  appendMessage(text, "user");
+  input.value = "";
+
+  let loader = showSkeleton();
+
+  try {
+    let res = await fetch("/chat", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({message: text})
+    });
+
+    if (!res.ok) throw new Error("Server error"); // handle 500 or other status
+
+    let data = await res.json();
+    chatBox.removeChild(loader);
+
+    let botMsg = document.createElement("div");
+    botMsg.className = "msg bot";
+    chatBox.appendChild(botMsg);
+
+    let reply = data.reply;
+    let i = 0;
+    function type() {
+      if (i < reply.length) {
+        botMsg.innerHTML = (botMsg.innerHTML.replace(/<div class="timestamp".*<\/div>/,'')) +
+          (reply[i] === " " ? "&nbsp;" : reply[i]) +
+          `<div class="timestamp">${getTime()}</div>`;
+        i++;
+        setTimeout(type, 25);
+      }
+    }
+    type();
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+  } catch (error) {
+    chatBox.removeChild(loader);
+    appendMessage("⚠️ Server failed to respond. Please try again later.", "bot");
+  }
+}
+
+
+    // Send on Enter key
+    input.addEventListener("keypress", e => { if(e.key==="Enter") sendMessage(); });
+
+    // Default welcome message
+    window.onload = () => {
+      appendMessage("👋 Hi! I'm <b>CurioBot</b> 🤖<br>I can convert currencies for you.<br>Example: <i>Convert 100 USD to INR</i>", "bot");
+    };
+
+    
+  </script>
+  
+</body>
+</html>
