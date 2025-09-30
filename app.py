@@ -2,32 +2,16 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import spacy
 from word2number import w2n
-import random
 from Model import predict_intent
 from Utility import format_response, preprocess_text
 from FAQs import get_faq_response
+from static import CURRENCY_MAP, DEFAULT_TARGET_CURRENCY
 
 app = Flask(__name__)
 
 # Load spaCy NLP model
 nlp = spacy.load("en_core_web_sm")
 
-DEFAULT_TARGET_CURRENCY = "INR"  # Change this to your preferred default
-
-# -------------------- CURRENCY MAP --------------------
-CURRENCY_MAP = {
-    "dollar": "USD", "dollars": "USD", "usd": "USD",
-    "rupee": "INR", "rupees": "INR", "rs": "INR", "inr": "INR",
-    "euro": "EUR", "euros": "EUR", "eur": "EUR",
-    "yen": "JPY", "jpy": "JPY",
-    "pound": "GBP", "pounds": "GBP", "gbp": "GBP",
-    "aud": "AUD", "cad": "CAD", "chf": "CHF", "cny": "CNY",
-    "sgd": "SGD", "hkd": "HKD", "nzd": "NZD", "krw": "KRW",
-    "rub": "RUB", "brl": "BRL", "zar": "ZAR", "mxn": "MXN",
-    "aed": "AED", "sek": "SEK", "nok": "NOK", "dkk": "DKK",
-    "ils": "ILS", "try": "TRY", "pln": "PLN", "thb": "THB",
-    "php": "PHP", "idr": "IDR", "myr": "MYR", "vnd": "VND"
-}
 
 # -------------------- CURRENCY EXTRACTION --------------------
 def extract_currency_and_amount(text):

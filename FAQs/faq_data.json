@@ -162,6 +162,18 @@
             "Sounds good!",
             "Alright then!"
         ]
+    },
+    {
+        "question": "good",
+        "answers": [
+            "Okay!",
+            "Alright!",
+            "Got it!",
+            "Sure thing!",
+            "Okay, noted!",
+            "Sounds good!",
+            "Alright then!"
+        ]
     }
 
 ]
